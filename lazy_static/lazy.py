@@ -15,8 +15,8 @@ def check_dir(_dir):
 		os.makedirs(_dir)			
 
 def transform_html(file_md):
-	with open(tmp_dir) as f:
-		lines = f.read().splitlines()
+	with open(file_md) as f:
+		lines = f.read()
 		html  = markdown.markdown(lines)
 		f.close()
 		return html 		
@@ -34,9 +34,7 @@ def generate_md(md_dir, out_dir):
 		
 		tmp_dir = md_dir + '/' + _file
 		fileName, fileExtension = os.path.splitext(tmp_dir)
-		pdb.set_trace()	
-		if fileExtension == ".md":
-			pdb.set_trace()
+		if fileExtension == ".md" or fileExtension == ".markdown":
 			html = transform_html(tmp_dir)	
 			save_html(html, fileName, out_dir)	
 
@@ -49,8 +47,8 @@ print " "
 print "Lazy static-site 0.1 "
 print "==================== "
 
-dir_md  = "/md"
-dir_out = "/out"
+dir_md  = "md"
+dir_out = "out"
 arg_fail = False
 check_dir(dir_md)
 check_dir(dir_out)
