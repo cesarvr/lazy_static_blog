@@ -1,16 +1,44 @@
+# Lazy Static Blog Generator
+#
+# 
+# Github: https://github.com/cesarvr/
+#
+
 import markdown
 import sys
 import os.path
+
+import pdb
 
 def check_dir(_dir):
 	if not os.path.isdir(_dir):
 		os.makedirs(_dir)			
 
+def transform_html(file_md):
+	with open(tmp_dir) as f:
+		lines = f.read().splitlines()
+		html  = markdown.markdown(lines)
+		f.close()
+		return html 		
+
+#save file with the same name of the markdown formated file
+def save_html(html, fileName, out_dir):
+	fo = open(out_dir + "/" + fileName  , "rw+")
+	fo.write(html)	
+	fo.close()
+
 def generate_md(md_dir, out_dir): 
-	print "generate_md coming soon"		
-
-
-
+	
+	print "generating in: " + md_dir
+	for _file in os.listdir(md_dir):
+		
+		tmp_dir = md_dir + '/' + _file
+		fileName, fileExtension = os.path.splitext(tmp_dir)
+		pdb.set_trace()	
+		if fileExtension == ".md":
+			pdb.set_trace()
+			html = transform_html(tmp_dir)	
+			save_html(html, fileName, out_dir)	
 
 
 	
@@ -27,10 +55,11 @@ arg_fail = False
 check_dir(dir_md)
 check_dir(dir_out)
 
+del sys.argv[0]
 
-
+print " "
 for arg in sys.argv:
-
+	
 	if arg == "--in":
 		print  "input directory coming soon"	 
 	elif arg == "--out": 
@@ -43,7 +72,6 @@ for arg in sys.argv:
 
 
 if arg_fail:
-	print " "
 	print "usage:"
 	print "--gen		 		 generate content based of .md(Markdown) files"
 	print "--out <directory>           	 destination of the content"
