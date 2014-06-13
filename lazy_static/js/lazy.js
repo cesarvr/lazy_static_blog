@@ -1,12 +1,13 @@
 
-var doc   = window.document;
-var lazy  = lazy || {};
-
+var doc   	= window.document;
+var lazy  	= lazy || {};
+lazy.utils  = lazy.utils || {};
 
 (function () {
 
 	var _script = [];
 	var _cnt = 0;
+	var _template_cache = {};
 
 	lazy.loadjs = function(script_list, callback){
 		_script = script_list;
@@ -91,6 +92,60 @@ var lazy  = lazy || {};
 			el.innerHTML = responseText;
 
 		});
+	}
+
+	lazy.load_resources = function(resoureces, callback){
+
+		 
+		lazy.network('GET', url, function(responseText){
+
+			el.innerHTML = responseText;
+
+		});
+
+	}
+
+
+
+
+	lazy.load_template = function(template, callback){
+
+		if( _template_cache[template] === null ){
+			lazy.network('GET', template, function(htmlTmpl){
+				_template_cache[template] = htmlTmpl;
+				callback(htmlTmpl);
+			});
+
+		}else
+			return callback(_template_cache[template]);
+	}
+
+
+	lazy.list = function(configJS, template){
+	
+
+		lazy.load_resources([configJS, template], function({config, templateHTML}){
+
+
+
+		});
+
+	}
+
+
+	lazy.utils = {};
+	lazy.utils.compile = function(html, data){
+
+		var htmlSegment = ""; 
+
+		for (var i = data.length - 1; i >= 0; i--) {
+			data[i]
+		};
+
+
+
+
+
 	}
 
 }());

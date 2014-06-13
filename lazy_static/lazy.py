@@ -4,43 +4,8 @@
 # Github: https://github.com/cesarvr/
 #
 
-import markdown
 import sys
-import os.path
-
-import pdb
-
-def check_dir(_dir):
-	if not os.path.isdir(_dir):
-		os.makedirs(_dir)			
-
-def transform_html(file_md):
-	with open(file_md) as f:
-		lines = f.read()
-		html  = markdown.markdown(lines)
-		f.close()
-		return html 		
-
-#save file with the same name of the markdown formated file
-def save_html(html, fileName, out_dir):
-	fo = open(out_dir + "/" + fileName  , "rw+")
-	fo.write(html)	
-	fo.close()
-
-def generate_md(md_dir, out_dir): 
-	
-	print "generating in: " + md_dir
-	for _file in os.listdir(md_dir):
-		
-		tmp_dir = md_dir + '/' + _file
-		fileName, fileExtension = os.path.splitext(tmp_dir)
-		if fileExtension == ".md" or fileExtension == ".markdown":
-			html = transform_html(tmp_dir)	
-			save_html(html, fileName, out_dir)	
-
-
-	
-
+import generator as gen
 
 
 print " "
@@ -48,14 +13,21 @@ print "Lazy static-site 0.1 "
 print "==================== "
 
 dir_md  = "md"
-dir_out = "out"
+dir_out = "posts"
 arg_fail = False
-check_dir(dir_md)
-check_dir(dir_out)
+
+gen.check_dir(dir_md)
 
 del sys.argv[0]
 
+
+ 
+
+
 print " "
+if len(sys.argv) == 0:
+	print "lazy.py --help"
+
 for arg in sys.argv:
 	
 	if arg == "--in":
@@ -63,16 +35,15 @@ for arg in sys.argv:
 	elif arg == "--out": 
 		print "output directory coming soon"
 	elif arg == "--gen":
-		generate_md(dir_md, dir_out)
+		gen.generate_md(dir_md)
+
+	elif arg == "--help":
+	 	print "usage:"
+		print "--help			 show help"
+		print "--gen	 		 generate navigation"
+		break
 	else:
-	 	arg_fail = True
-		break			
+		print "invalid option  	need help? --help"
 
-
-if arg_fail:
-	print "usage:"
-	print "--gen		 		 generate content based of .md(Markdown) files"
-	print "--out <directory>           	 destination of the content"
-	print "--in  <directory>	 	 destination of the .md(Markdown) files"
 
 
