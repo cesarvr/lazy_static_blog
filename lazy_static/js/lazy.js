@@ -2,6 +2,7 @@
 var doc   	= window.document;
 var lazy  	= lazy || {};
 lazy.utils  = lazy.utils || {};
+lazy.resources = [];
 
 (function () {
 
@@ -15,10 +16,7 @@ lazy.utils  = lazy.utils || {};
 		lazy.callback = callback;
 		lazy.file_count = script_list.length;
 		lazy.make_tags(_script[_cnt]);
-
 	}
-
-	
 
 	lazy.make_tags = function( tag ){
 			
@@ -29,8 +27,6 @@ lazy.utils  = lazy.utils || {};
 			_tmp.type = "text/javascript";
 			_tmp.onload = _tmp.onreadystatechange = function() { 
 			
-				
-
 				 /* IE 8 */
 				 if(typeof document.attachEvent === "object"){
 				 	console.log("stat: " + _tmp.readyState);
@@ -56,8 +52,6 @@ lazy.utils  = lazy.utils || {};
 	            }
 
 			};	
-		
-	
 
 		_tmp.src = tag;  
 		doc.getElementsByTagName('head')[0].appendChild(_tmp);
@@ -70,19 +64,17 @@ lazy.utils  = lazy.utils || {};
 		// Hack to pass bytes through unprocessed.
 		//xhr.overrideMimeType('text/plain; charset=x-user-defined');
 
-
 		xhr.onreadystatechange = function(e) {
 		  if (this.readyState == 4 && this.status == 200) {
 		    	callback(this.responseText);
 		  }
 		}
 
-
 		xhr.send();
-
-
 	};
 
+
+//---------
 	lazy.inyector = function(idElement, url){
 
 		var el = document.querySelector(idElement);
@@ -93,60 +85,104 @@ lazy.utils  = lazy.utils || {};
 
 		});
 	}
-
-	lazy.load_resources = function(resoureces, callback){
-
-		 
-		lazy.network('GET', url, function(responseText){
-
-			el.innerHTML = responseText;
-
-		});
-
-	}
+//----------	
 
 
-
-
-	lazy.load_template = function(template, callback){
-
-		if( _template_cache[template] === null ){
-			lazy.network('GET', template, function(htmlTmpl){
-				_template_cache[template] = htmlTmpl;
-				callback(htmlTmpl);
-			});
-
-		}else
-			return callback(_template_cache[template]);
-	}
-
-
-	lazy.list = function(configJS, template){
 	
+	lazy.load_resources = function(resources, callback){
 
-		lazy.load_resources([configJS, template], function({config, templateHTML}){
+		var url = resources[0];
+		resources.splice(0,1);
 
-
+		lazy.network('GET', url, function(data){
+			if (resources.length !== 0) {
+				lazy.resources.push(data);
+				lazy.load_resources(resources, callback);
+			}else{
+				lazy.resources.push(data);
+				var res = lazy.resources;
+				lazy.resources = [];
+				callback.apply(null, res);
+			}
 
 		});
 
 	}
 
 
-	lazy.utils = {};
-	lazy.utils.compile = function(html, data){
+	lazy.list_blogs = function(idElement, template){	
 
-		var htmlSegment = ""; 
+		var el = document.querySelector(idElement);
 
-		for (var i = data.length - 1; i >= 0; i--) {
-			data[i]
-		};
+		lazy.load_resources(["routes.json",template], function(config, template){
+
+			lazy.routes = JSON.parse(config);
+			var htmlCompileData = lazy.utils.compile(template, lazy.routes);
+
+			for (var i = 0; i < htmlCompileData.length; i++) {
+				el.innerHTML +=  htmlCompileData[i];
+			};
+
+		});
 
 
+	}
+
+
+
+
+
+
+
+	lazy.page = function(pageToCompile){
+
+
+		lazy.network('GET', pageToCompile, function(pageHTML){
+
+			lazy.page.body = document.querySelector("body");
+			lazy.page.body.innerHTML += pageHTML;
+			lazy.compile(pageHTML);
+			
+
+
+
+		});
+	
+	}
+
+	lazy.include = function(pageHTML){
+		lazy.network('GET', pageHTML, function(data){
+
+			lazy.page.body.innerHTML = data;
+			return data;
+
+		});
+	}
+
+	lazy.compile = function(pageHTML){
+
+			var ini_code = pageHTML.search('{{');
+			var end_code = pageHTML.search('}}'); 
+
+			if (ini_code === -1 && end_code === -1 ) {
+				
+				//return pageHTML;
+			}else{
+			
+				var code_blk = pageHTML.substring(ini_code + 2, end_code);
+
+				//compile ?
+				pageHTML.replace(code_blk, eval(code_blk) );
+				//lazy.utils.compileV2(pageHTML);
+
+			}
 
 
 
 	}
+
+
+
 
 }());
 
