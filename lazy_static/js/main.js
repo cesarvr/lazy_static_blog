@@ -1,6 +1,6 @@
 
 (function(){
 
-	lazy.page("template/page.html"); //  HEAD 
+	lazy.page(); //  HEAD 
 
 })();

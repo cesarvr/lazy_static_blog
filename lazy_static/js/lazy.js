@@ -3,6 +3,8 @@ var doc   	= window.document;
 var lazy  	= lazy || {};
 lazy.utils  = lazy.utils || {};
 lazy.resources = [];
+var site = {};
+var routes = {};
 
 (function () {
 
@@ -73,21 +75,6 @@ lazy.resources = [];
 		xhr.send();
 	};
 
-
-//---------
-	lazy.inyector = function(idElement, url){
-
-		var el = document.querySelector(idElement);
-
-		lazy.network('GET', url, function(responseText){
-
-			el.innerHTML = responseText;
-
-		});
-	}
-//----------	
-
-
 	
 	lazy.load_resources = function(resources, callback){
 
@@ -134,56 +121,66 @@ lazy.resources = [];
 
 
 
-	lazy.page = function(pageToCompile){
+	lazy.page = function(){
 
 
-		lazy.network('GET', pageToCompile, function(pageHTML){
+		lazy.load_resources([
+			"config.json",
+			"routes.json",
+			"layout/head.html",
+			"layout/header.html",
+			"layout/footer.html"
 
-			lazy.page.body = document.querySelector("body");
-			lazy.page.body.innerHTML += pageHTML;
-			lazy.compile(pageHTML);
-			
+		], function(config, routes, headHTML, bodyHTML, footerHTLM){
+
+			site 	= JSON.parse(config);
+			routes 	= JSON.parse(routes); 
 
 
 
-		});
+			document.querySelector("head").innerHTML = lazy.compile(headHTML, null);
+			document.querySelector("body").innerHTML = lazy.compile(bodyHTML, null);
+			document.querySelector("body").innerHTML += lazy.compile(footerHTLM, null);
+
+		});	
+
+
+
+
 	
 	}
 
-	lazy.include = function(pageHTML){
-		lazy.network('GET', pageHTML, function(data){
+	lazy.compile = function(){
 
-			lazy.page.body.innerHTML = data;
-			return data;
+		var scope = null;
 
-		});
-	}
+		var cmp = function(template, object){
 
-	lazy.compile = function(pageHTML){
+			var ini = template.search('{{');
+			var end = template.search('}}');
 
-			var ini_code = pageHTML.search('{{');
-			var end_code = pageHTML.search('}}'); 
+			if (ini === -1 && end === -1 ) {
 
-			if (ini_code === -1 && end_code === -1 ) {
-				
-				//return pageHTML;
+				scope = template;
 			}else{
-			
-				var code_blk = pageHTML.substring(ini_code + 2, end_code);
 
-				//compile ?
-				pageHTML.replace(code_blk, eval(code_blk) );
-				//lazy.utils.compileV2(pageHTML);
+				var code_blk = template.substring(ini + 2, end);
 
+				template = template.replace('{{'+code_blk+'}}', eval(code_blk) );
+				cmp(template, object);
 			}
 
 
+			return scope;
 
-	}
+		};	
+
+		return cmp;
+	}();
 
 
 
-
+	
 }());
 
 
