@@ -1,4 +1,4 @@
-import markdown
+
 import os
 import json
 import pdb
@@ -42,7 +42,7 @@ def generate_md(md_dir):
 			with open(fileRoute) as f:
 				data = f.read()
 				markdown = parse_page_conf(data)
-				markdown['url'] = fileRoute
+				markdown['file'] = _file 
 				
 				list_files.append(markdown)	
 	
