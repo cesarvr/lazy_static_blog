@@ -1,12 +1,17 @@
 
+
 var doc   	= window.document;
 var lazy  	= lazy || {};
 lazy.utils  = lazy.utils || {};
 lazy.resources = [];
 var site = {};
 var routes = {};
+var posts = {};
 
 (function () {
+
+
+
 
 	var _script = [];
 	var _cnt = 0;
@@ -112,8 +117,6 @@ var routes = {};
 			};
 
 		});
-
-
 	}
 
 
@@ -148,7 +151,8 @@ var routes = {};
 
 	lazy.test_cmp = function(){
 
-		lazy.load_resources(['template/blog_list.html'], function(tmpl){
+		lazy.load_resources(["routes.json", 'template/blog_list.html'], function(post, tmpl){
+			posts = JSON.parse(post);
 			console.log('cvz-> ' + lazy.compile(tmpl) );
 
 		});			
@@ -181,12 +185,20 @@ var routes = {};
 		var stateObj = { home: "begin" };
 		history.pushState(stateObj, "page 2", "#home");
 
-		
-
-		
-					
-	
 	}
+
+
+	lazy.foreach = function(array, callback){
+
+		for (var i = array.length - 1; i >= 0; i--) {
+			callback(array[i]);
+		};
+
+	}
+
+
+
+
 
 	/*
 		Look recursively for all the {{ code.js }}, tags and execute the javascript. 
@@ -195,51 +207,137 @@ var routes = {};
 	lazy.compile = function(){
 
 		var scope = null;
+		var expression = "";
+		var code_js = [];
 		
+		var compiler = compiler || {};
+		var that = this;
+
+		
+	compiler.codeJS ={
+
+		strbuild : "",
+		inject_cmp : false, 
+		_code: [],
+
+		init: function(str){
+			str = this.formatting(str);
+			this.strbuild += "\"" + str + "\"";
+			return this;
+
+		},
+
+		formatting: function(str){
+			str = str.trim();
+			return str.replace(/\"/g , " \\\" ");
+		},
+
+		add_code: function(line){
+			this._code.push("\""+ this.formatting(line) + "\"");
+		},
+
+		format_code: function(){
+
+			return this._code.toString();
+
+		},
+
+		add: function(str){
+	
+			str = this.formatting(str);
+
+			if(str.search(';') !== -1){
+
+				this.strbuild += 'lazy.compile([' + this.format_code() + "]," + "post);"
+
+			}
+
+			this.strbuild += str;
+			
+			return this;
+
+		},
+
+		toString : function(){
+			return this.strbuild;
+		}
 
 
-		var prepare_exp = function(htmlTemplate){
+	}; 
+
+		var docjs = Object.create(compiler.codeJS);
+
+
+
+		var build_exp = function(htmlTemplate){
 			//deleting <% %>
-			//
-			
-			var exp_open  = template.search('<%'); 
-			var exp_close = template.search('%>');
-			
-			
-					
+				
+			var line = "";
 
+			if( htmlTemplate.length >0 ){
+				line = htmlTemplate[0];
+				htmlTemplate.splice(0,1);
+				
+				if(line.trim() === "" && htmlTemplate.length >0) 
+					build_exp(htmlTemplate);
+				
+			}else{ 
+				
+				eval(docjs.strbuild);
+			}
 			
+
+			var exp_parser = /(<%)(\D+)(%>)/;
+			var parsed = exp_parser.exec(line);
+
+			if(parsed !== null ){
+				docjs.add( parsed[2] + "\n" );
+				build_exp( htmlTemplate );
+			}
+
+		
+			docjs.add_code( line );
+			build_exp(htmlTemplate);
+
 		}
 		
-		var cmp = function(template, object){
+		var cmp = function(template, post){
 
-			var ini_open  = template.search('{{');
-			var end_close = template.search('}}');
-			
-			var exp_open  = template.search('<%'); 
-			var exp_close = template.search('%>');
-			
-			
-			if(exp_open !== -1 && exp_close !== -1){
-				prepare_exp(template);	
+			if( typeof template === 'string' ) {
+    			var lstLines = template.match(/[^\r\n]+/g);
+				build_exp( lstLines );
 			}
 			
-			if (ini_open === -1 && end_close === -1 ) {
+			
+			for (var i = template.length - 1; i >= 0; i--) {
+				var line = template[i];
+				var parsed = /{{(.+)}}/.exec(line);
 
-				scope = template;
-			}else{
+				if (parsed !== null ) {
+					var js = parsed[1]; 
+					template[i] = line.replace(/{{(.+)}}/, eval(js));
+				};
 
-				var code_blk = template.substring(ini_open + 2, end_close);
+			};
 
-				template = template.replace('{{'+code_blk+'}}', eval(code_blk) );
-				cmp(template, object); 
-			}
+			template = template.replace('{{'+code_blk+'}}', eval(code_blk) );
+			cmp(template, object); 
+		
 
 		
 
 	
 			return scope;
 		};	
+
+		var cmpe = function(template, object){
+
+			alert(template);
+			alert(object);
+
+
+
+		};
 
 		return cmp;
 	}();
