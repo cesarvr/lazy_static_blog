@@ -188,158 +188,182 @@ var posts = {};
 	}
 
 
+
+
 	lazy.foreach = function(array, callback){
 
-		for (var i = array.length - 1; i >= 0; i--) {
+		for (var i = 0; i < array.length; i++) {
+
 			callback(array[i]);
 		};
 
 	}
+			
 
-
-
-
-
-	/*
-		Look recursively for all the {{ code.js }}, tags and execute the javascript. 
-	*/
-
-	lazy.compile = function(){
-
-		var scope = null;
-		var expression = "";
-		var code_js = [];
+	lazy.template = function(){
+		this.strbuild = "";
+		var fnParams =  [];
+		var scope = ""; 
+		this.tmpl = "";
+		var brkt_open = '<%', brkt_close = '%>';
 		
-		var compiler = compiler || {};
-		var that = this;
 
-		
-	compiler.codeJS ={
-
-		strbuild : "",
-		inject_cmp : false, 
-		_code: [],
-
-		init: function(str){
-			str = this.formatting(str);
-			this.strbuild += "\"" + str + "\"";
-			return this;
-
-		},
-
-		formatting: function(str){
+		var normalize = function(str){
 			str = str.trim();
 			return str.replace(/\"/g , " \\\" ");
-		},
-
-		add_code: function(line){
-			this._code.push("\""+ this.formatting(line) + "\"");
-		},
-
-		format_code: function(){
-
-			return this._code.toString();
-
-		},
-
-		add: function(str){
-	
-			str = this.formatting(str);
-
-			if(str.search(';') !== -1){
-
-				this.strbuild += 'lazy.compile([' + this.format_code() + "]," + "post);"
-
-			}
-
-			this.strbuild += str;
-			
-			return this;
-
-		},
-
-		toString : function(){
-			return this.strbuild;
 		}
-
-
-	}; 
-
-		var docjs = Object.create(compiler.codeJS);
-
-
-
-		var build_exp = function(htmlTemplate){
-			//deleting <% %>
-				
-			var line = "";
-
-			if( htmlTemplate.length >0 ){
-				line = htmlTemplate[0];
-				htmlTemplate.splice(0,1);
-				
-				if(line.trim() === "" && htmlTemplate.length >0) 
-					build_exp(htmlTemplate);
-				
-			}else{ 
-				
-				eval(docjs.strbuild);
-			}
 			
-
-			var exp_parser = /(<%)(\D+)(%>)/;
-			var parsed = exp_parser.exec(line);
-
-			if(parsed !== null ){
-				docjs.add( parsed[2] + "\n" );
-				build_exp( htmlTemplate );
-			}
-
-		
-			docjs.add_code( line );
-			build_exp(htmlTemplate);
-
+		var formatting = function(str){
+			return "\""+ normalize(str) + "\"";	
 		}
 		
-		var cmp = function(template, post){
-
-			if( typeof template === 'string' ) {
-    			var lstLines = template.match(/[^\r\n]+/g);
-				build_exp( lstLines );
+		var config_scope = function(code){
+		
+			var fnParams_pattern = /function\((\D+)\)/;
+			var parse = fnParams_pattern.exec(code);
+				
+			if(parse !== null){
+				this.fnParams = parse[1].split(',');			
 			}
-			
-			
-			for (var i = template.length - 1; i >= 0; i--) {
-				var line = template[i];
-				var parsed = /{{(.+)}}/.exec(line);
-
-				if (parsed !== null ) {
-					var js = parsed[1]; 
-					template[i] = line.replace(/{{(.+)}}/, eval(js));
-				};
-
-			};
-
-			template = template.replace('{{'+code_blk+'}}', eval(code_blk) );
-			cmp(template, object); 
+		}
 		
-
 		
-
 	
-			return scope;
-		};	
-
-		var cmpe = function(template, object){
-
-			alert(template);
-			alert(object);
 
 
+
+		var _value = function(value){
+			if(typeof value === 'object'){
+				return JSON.stringify(value);
+			}else return value;	
+		}
+		
+		var _init_param = function(js_param){
+		
+			//check scope var's 
+			for(var fncount in this.fnParams){
+			
+				var lvar = this.fnParams[fncount];
+				var npos = 1;
+				eval(lvar + "=" + _value( js_param[ npos + parseInt(fncount) ] ) );  	
+			}
+
+		}	
+	
+
+		var _out = function(){
+					
+			console.log(arguments);
+			var line = arguments[0];
+			var regx = /{{(.+)}}/;
+			var js_prop = regx.exec(line);			
+			
+			if(js_prop){
+				_init_param(arguments);
+				this.tmpl += line.replace(regx, eval(js_prop[1]));			
+			}else{
+				this.tmpl+=line;
+			}
+		}
+		
+		/* add_code add the HTML + {{ TAGS }}  */
+		var add_code = function(line){
+			if(this.fnParams.length > 0)
+				this.strbuild += "_out("+ formatting(line) + "," +this.fnParams.toString() + "); ";
+			else
+				this.strbuild += "_out("+ formatting(line) + ", null);";
+		}
+		
+		/*add_exp add the javascript expression */
+		var add_exp = function(code){
+			code = code.replace('<%', ''); code = code.replace('%>', '');				
+			config_scope(code);
+			this.strbuild += normalize(code);  
+		}
+
+		
+
+		var clean = function(){
+			this.strbuild="";
+			this.fnParams = [];
+		}
+		
+		var execute = function(){
+			this.tmpl = "";	
+			eval(this.strbuild);
+			return this.tmpl;
+		
+		}
+		
+		var brkt = function(type_brkt, line){
+
+			if(line.search(type_brkt) !== -1){
+				return true; 
+			}					
+			
+			return false;
+		}
+
+		return {
+		
+			compile: function(template){
+					
+				var braket = false;   
+				var lst_lines = "";
+				var collect = false; 
+			
+				if( typeof template === 'string' ) {
+    					lst_lines = template.match(/[^\r\n]+/g);
+				}else 
+					return "error: dont work with other data";
+
+				for(var i = 0; i < template.length; i++){
+					var line    = lst_lines[i];
+			
+					
+					if(typeof line === "undefined") break;	
+					if(line.trim() === "") continue;
+				
+				
+		
+					if( brkt(brkt_open, line) && brkt(brkt_close, line) ){
+				
+						add_exp(line);
+						continue;	
+					}
+				
+					if( brkt(brkt_open, line) ){
+						add_exp(line);
+						collect = true;
+ 						continue;
+					}
+
+					if( brkt(brkt_close, line) ){
+						add_exp(line);	
+						collect = false;
+						continue; 
+					}
+				
+					if(collect){
+						add_exp(line);
+					}else
+						add_code(line);
+				
+				}			
+
+
+			},
+
+			execute: function(){
+				tmpl = "";	
+				eval(strbuild);
+			
+				return tmpl;
+			}
 
 		};
 
-		return cmp;
+
 	}();
 	
 }());
