@@ -103,21 +103,6 @@ var posts = {};
 	}
 
 
-	lazy.list_blogs = function(idElement, template){	
-
-		var el = document.querySelector(idElement);
-
-		lazy.load_resources(["routes.json",template], function(config, template){
-
-			lazy.routes = JSON.parse(config);
-			var htmlCompileData = lazy.utils.compile(template, lazy.routes);
-
-			for (var i = 0; i < htmlCompileData.length; i++) {
-				el.innerHTML +=  htmlCompileData[i];
-			};
-
-		});
-	}
 
 
 	/*
@@ -138,26 +123,18 @@ var posts = {};
 			site 	= JSON.parse(config);
 			routes 	= JSON.parse(routes); 
 
-			document.querySelector("head").innerHTML = lazy.compile(headHTML, null);
-			document.querySelector("body").innerHTML = lazy.compile(bodyHTML, null);
-		
-
-			document.querySelector("body").innerHTML += lazy.compile(footerHTLM, null);
+			lazy.template.compile(headHTML, null);
+			document.querySelector("head").innerHTML = lazy.template.execute();	
+			lazy.template.compile(bodyHTML, null);
+			document.querySelector("body").innerHTML = lazy.template.execute();	
+			
+			lazy.template.compile(footerHTLM, null);
+			document.querySelector("body").innerHTML += lazy.template.execute();	
 			
 			lazy.load_custom_tag();				
 		});	
 	}
 	
-
-	lazy.test_cmp = function(){
-
-		lazy.load_resources(["routes.json", 'template/blog_list.html'], function(post, tmpl){
-			posts = JSON.parse(post);
-			console.log('cvz-> ' + lazy.compile(tmpl) );
-
-		});			
-
-	}
 
 	lazy.load_custom_tag = function(){
 		
@@ -187,9 +164,6 @@ var posts = {};
 
 	}
 
-
-
-
 	lazy.foreach = function(array, callback){
 
 		for (var i = 0; i < array.length; i++) {
@@ -202,7 +176,7 @@ var posts = {};
 
 	lazy.template = function(){
 		this.strbuild = "";
-		var fnParams =  [];
+		this.fnParams =  [];
 		var scope = ""; 
 		this.tmpl = "";
 		var brkt_open = '<%', brkt_close = '%>';
@@ -306,12 +280,14 @@ var posts = {};
 
 		return {
 		
+
+
 			compile: function(template){
 					
 				var braket = false;   
 				var lst_lines = "";
 				var collect = false; 
-			
+				strbuild ="";
 				if( typeof template === 'string' ) {
     					lst_lines = template.match(/[^\r\n]+/g);
 				}else 
@@ -355,6 +331,7 @@ var posts = {};
 			},
 
 			execute: function(){
+
 				tmpl = "";	
 				eval(strbuild);
 			
