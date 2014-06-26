@@ -111,43 +111,13 @@ var posts = {};
 
 	lazy.init = function(){
 
-		lazy.load_resources([
-			"config.json",
-			"routes.json",
-			"layout/head.html",
-			"layout/header.html",
-			"layout/footer.html"
-
-		], function(config, routes, headHTML, bodyHTML, footerHTLM){
-
-			site 	= JSON.parse(config);
-			routes 	= JSON.parse(routes); 
-
-			lazy.template.compile(headHTML, null);
-			document.querySelector("head").innerHTML = lazy.template.execute();	
-			lazy.template.compile(bodyHTML, null);
-			document.querySelector("body").innerHTML = lazy.template.execute();	
 			
-			lazy.template.compile(footerHTLM, null);
-			document.querySelector("body").innerHTML += lazy.template.execute();	
-			
-			lazy.load_custom_tag();				
-		});	
 	}
 	
 
 	lazy.load_custom_tag = function(){
 		
-		var el = document.querySelector("content");
-		var template = el.getAttribute('template');
-		
-		if( template.search('.html') === -1) template += '.html'; 				
-		
-		lazy.load_resources([template], function(tmplData){
-			
-			console.log(lazy.compile(tmplData,null));
-
-		});
+	
 					
 
 	}
@@ -155,14 +125,114 @@ var posts = {};
 	
 	lazy.History = function(){
 
-		window.onpopstate = function(event){
-			console.log("--> "+ document.location );
-		}
-		
-		var stateObj = { home: "begin" };
-		history.pushState(stateObj, "page 2", "#home");
+		this.urls = [];
+		this.post_template = { url:'#home',   resource: 'template/posts.html' };
 
-	}
+
+		var add_posts =  function(_posts){
+
+				for (var i = 0; i < _posts.length; i++) {
+					var post = _posts[i];
+					var nav  =  { url: '#'+post.file.replace('.markdown', '') ,   resource: site.dir + post.file };
+					post.link = nav.url;
+					urls.push(nav);
+				};
+
+		}
+
+		var build_page = function(){
+
+			lazy.load_resources([
+				"config.json",
+				"posts.json",
+				"layout/head.html",
+				"layout/header.html",
+				"layout/footer.html"
+
+			], function(config, routes, headHTML, bodyHTML, footerHTLM){
+
+				site 	= JSON.parse(config);
+				posts 	= JSON.parse(routes); 
+
+				add_posts(posts);
+				document.querySelector("head").innerHTML = headHTML;	
+				
+				
+				document.querySelector("body").innerHTML = bodyHTML;
+
+
+				var doc = document.querySelector("html");	
+				lazy.template.compile(doc.innerHTML, null);
+				doc.innerHTML = lazy.template.execute();
+
+				window.onpopstate = navigation;
+				navigation();
+								
+			});
+
+
+		}
+
+		var navigation = function(event){
+
+				var nav = "";
+				
+				for (var i = 0; i < this.urls.length; i++) {
+					
+					if(this.urls[i].url === window.location.hash){
+					 	nav = this.urls[i]; break;
+					}
+				};	
+
+				if(nav){
+
+					var el = document.querySelector("content");
+					var my_nav = nav; 
+					lazy.load_resources([nav.resource], function(tmplData){
+						
+						var data = "";
+						if(my_nav.resource.find('.markdown') !== -1){
+							
+
+						}else{
+							lazy.template.compile(tmplData,null);
+							data = lazy.template.execute();
+						}
+
+
+						el.innerHTML = data; 
+
+					});
+
+				}
+
+
+
+			}
+
+
+		return {
+			
+			init : function(){
+
+				urls.push(post_template);
+				
+				
+				var stateObj = { home: "begin" };
+				history.pushState(stateObj, "page 2", "#home");
+
+
+				
+				build_page();
+			},
+
+			 
+
+			
+
+
+		}
+	}();
 
 	lazy.foreach = function(array, callback){
 
@@ -227,7 +297,7 @@ var posts = {};
 
 		var _out = function(){
 					
-			console.log(arguments);
+			
 			var line = arguments[0];
 			var regx = /{{(.+)}}/;
 			var js_prop = regx.exec(line);			
@@ -236,7 +306,7 @@ var posts = {};
 				_init_param(arguments);
 				this.tmpl += line.replace(regx, eval(js_prop[1]));			
 			}else{
-				this.tmpl+=line;
+				this.tmpl +=line;
 			}
 		}
 		
