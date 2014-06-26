@@ -173,7 +173,19 @@ var posts = {};
 
 		}
 
+		var remove_page_tag = function(str){
+		
+
+
+
+			return str.substring(str.indexOf('[_page]') + '[_page]'.length, str.length); 
+		}
+
 		var navigation = function(event){
+
+
+
+
 
 				var nav = "";
 				
@@ -191,8 +203,9 @@ var posts = {};
 					lazy.load_resources([nav.resource], function(tmplData){
 						
 						var data = "";
-						if(my_nav.resource.find('.markdown') !== -1){
-							
+						if(my_nav.resource.search('.markdown') !== -1){
+
+							data = marked( remove_page_tag(tmplData) );
 
 						}else{
 							lazy.template.compile(tmplData,null);
@@ -214,6 +227,9 @@ var posts = {};
 		return {
 			
 			init : function(){
+
+
+
 
 				urls.push(post_template);
 				
