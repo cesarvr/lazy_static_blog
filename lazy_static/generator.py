@@ -19,9 +19,10 @@ def parse_page_conf(_data):
 	end_conf = _data.find(conf_block_end)
 	
 	mkdow =  _data[ini_conf:end_conf]
-	
-	mkdowDict = json.loads(mkdow)
 
+
+
+	mkdowDict = json.loads(mkdow)
 	return mkdowDict
 
 
@@ -47,7 +48,8 @@ def generate_md(md_dir):
 				list_files.append(markdown)	
 	
 
-	with open('routes.json', 'w') as jfile:
+	with open('posts.json', 'w') as jfile:
+
 		jfile.write(json.dumps(list_files))
 		jfile.close()
 
