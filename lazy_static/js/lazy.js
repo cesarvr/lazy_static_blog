@@ -217,6 +217,11 @@ var posts = {};
 
 					});
 
+				}else{
+
+					var stateObj = { home: "begin" };
+					history.pushState(stateObj, "page 2", "#home");
+
 				}
 
 
@@ -234,9 +239,7 @@ var posts = {};
 				urls.push(post_template);
 				
 				
-				var stateObj = { home: "begin" };
-				history.pushState(stateObj, "page 2", "#home");
-
+				
 
 				
 				build_page();
@@ -271,6 +274,11 @@ var posts = {};
 		var normalize = function(str){
 			str = str.trim();
 			return str.replace(/\"/g , " \\\" ");
+		}
+
+		var replace_special_char = function(str){
+
+			return str.replace('&lt;', "<").replace('&gt;', ">");
 		}
 			
 		var formatting = function(str){
@@ -385,7 +393,7 @@ var posts = {};
 					
 					if(typeof line === "undefined") break;	
 					if(line.trim() === "") continue;
-				
+					line = replace_special_char(line);
 				
 		
 					if( brkt(brkt_open, line) && brkt(brkt_close, line) ){
