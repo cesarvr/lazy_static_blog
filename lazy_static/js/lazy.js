@@ -1,98 +1,63 @@
 var doc   	= window.document;
 var lazy  	= lazy || {};
-lazy.utils  = lazy.utils || {};
-lazy.resources = [];
 var site = {};
 var routes = {};
 var posts = {};
+
+
 
 (function () {
 
 	var _script = [];
 	var _cnt = 0;
 	var _template_cache = {};
+	var _lzm  = {};	
 
-	lazy.loadjs = function(script_list, callback){
-		_script = script_list;
-		
-		lazy.callback = callback;
-		lazy.file_count = script_list.length;
-		lazy.make_tags(_script[_cnt]);
-	}
-
-	lazy.make_tags = function( tag ){
-			
-			console.log("cargando: " +tag);
-			var _tmp = doc.createElement('script');
-			var that = this; 
-			
-			_tmp.type = "text/javascript";
-			_tmp.onload = _tmp.onreadystatechange = function() { 
-			
-				 /* IE 8 */
-				 if(typeof document.attachEvent === "object"){
-				 	console.log("stat: " + _tmp.readyState);
-					
-					if (_tmp.readyState === 'loaded' || _tmp.readyState === 'complete'){
-						
-
-						lazy.file_count--;
-
-						if (lazy.file_count == 0) {
-							that.callback();
-						}else 
-							that.make_tags( _script[  _script.length - lazy.file_count ] );
-
-					 }
-				}else{
-				
-					lazy.file_count--;
-	           		if (lazy.file_count == 0) {
-								that.callback();
-							}else 
-								that.make_tags( _script[  _script.length - lazy.file_count ] );
-	            }
-
-			};	
-
-		_tmp.src = tag;  
-		doc.getElementsByTagName('head')[0].appendChild(_tmp);
-	};
-
-
-	lazy.network = function(method, url, callback){
-		var xhr = new XMLHttpRequest();
-		xhr.open(method, url, true);
-
-		xhr.onreadystatechange = function(e) {
-		  if (this.readyState == 4 && this.status == 200) {
-		    	callback(this.responseText);
-		  }
-		}
-
-		xhr.send();
-	};
+	_lzm.resources = (function(){
 
 	
-	lazy.load_resources = function(resources, callback){
+		var _res_count = 0;
+		var _data = [];
 
-		var url = resources[0];
-		resources.splice(0,1);
+	  	var network = function(method, url, callback){
+	  		
+	  		var xhr = new XMLHttpRequest();
+	  		xhr.open(method, url, true);
 
-		lazy.network('GET', url, function(data){
-			if (resources.length !== 0) {
-				lazy.resources.push(data);
-				lazy.load_resources(resources, callback);
-			}else{
-				lazy.resources.push(data);
-				var res = lazy.resources;
-				lazy.resources = [];
-				callback.apply(null, res);
-			}
+	  		xhr.onreadystatechange = function(e) {
+	    	  if (this.readyState == 4 && this.status == 200) {
+	    	    callback(this.responseText);
+	    	  }
+	    	}
 
-		});
+	   		xhr.send();
 
-	}
+		};
+
+	  	return {
+	  		download: function(resources, callback){
+
+	      		if(_res_count === 0)_data = [];
+	      		var url = resources[_res_count++];
+	      		
+		        network('GET', url, function(data){
+		        	_data.push(data);
+
+			    	if (resources.length > _res_count) {
+			    	  	_lzm.resources.download(resources, callback);
+			          	
+			        }else{
+			        	_res_count = 0;
+
+			        	callback.apply(null, _data);
+			        	
+			        }
+
+		      	});
+	    	}
+
+	  	};
+	}());
 
 	lazy.History = function(){
 
@@ -113,7 +78,7 @@ var posts = {};
 
 		var build_page = function(){
 
-			lazy.load_resources([
+			_lzm.resources.download([
 				"config.json",
 				"posts.json",
 				"layout/head.html",
@@ -130,11 +95,9 @@ var posts = {};
 				
 				
 				document.querySelector("body").innerHTML = lazy.template.compile_execute(bodyHTML);
-				
 
 				window.onpopstate = navigation;
 				navigation();
-								
 			});
 
 
@@ -147,7 +110,7 @@ var posts = {};
 		var navigate_to = function(nav){
 			var el = document.querySelector("content");
 			var my_nav = nav; 
-			lazy.load_resources([nav.resource], function(tmplData){
+			_lzm.resources.download([nav.resource], function(tmplData){
 						
 				var data = "";
 				if(my_nav.resource.search('.markdown') !== -1){
