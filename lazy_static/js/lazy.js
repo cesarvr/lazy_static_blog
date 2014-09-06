@@ -37,20 +37,18 @@ var posts = {};
 	  	return {
 	  		download: function(resources, callback){
 
-	      		if(_res_count === 0)_data = [];
-	      		var url = resources[_res_count++];
-	      		
-		        network('GET', url, function(data){
-		        	_data.push(data);
+		      		if(_res_count === 0)_data = [];
+		      		var url = resources[_res_count++];
+	      			
+		        	network('GET', url, function(data){
+		        		_data.push(data);
 
-			    	if (resources.length > _res_count) {
-			    	  	_lzm.resources.download(resources, callback);
+			    		if (resources.length > _res_count) {
+			    		  	_lzm.resources.download(resources, callback);
 			          	
-			        }else{
-			        	_res_count = 0;
-
-			        	callback.apply(null, _data);
-			        	
+			    		}else{
+			        		_res_count = 0;
+			        		callback.apply(null, _data);
 			        }
 
 		      	});
